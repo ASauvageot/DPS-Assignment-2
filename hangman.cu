@@ -6,6 +6,9 @@
 #include <chrono>
 
 using namespace std;
+ using namespace chrono;
+
+
 const int MAX_TRIES = 5;
 #define WORD_SIZE 1000000
 
@@ -21,6 +24,17 @@ void init_null(char* a, int n) {
 
 int letterFill(char, string, string&);
 
+ void reportTime(const char* msg, steady_clock::duration span) { 
+
+    double nsecs = double(span.count()) *
+    steady_clock::period::num / steady_clock::period::den;
+    std::cout << std::fixed;
+    std::cout << msg << " - took - " <<
+    nsecs << " secs" << std::endl;
+
+ }
+ 
+ 
 //gets matches, and edits strings..
 __global__ void searchLetter(char* empty, char* word, char* guess, int* count, int* fcount, int n) {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -125,6 +139,9 @@ int main()
 		// otherwise increment the number of wrong guesses.
 
 		//TODO
+		    steady_clock::time_point ts, te;
+
+
 		int n = word.length();
 
 		//MEMaloc d_empty, d_word, d_guess, d_count
@@ -177,9 +194,14 @@ int main()
 		cudaMemcpy(d_count, h_count, nblks * ntpb_x * sizeof(int), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_fcount, h_count, nblks * sizeof(int), cudaMemcpyHostToDevice);
 
+		std::srand(std::time(nullptr));
+		ts = steady_clock::now();
+
 		searchLetter <<<nblks, ntpb_x>>>(d_empty, d_word, d_guess, d_count, d_fcount, ntpb_x);
 		count_final <<<1, nblks>>>(d_fcount, nblks);
 
+		te = steady_clock::now();
+		reportTime("Search Time: ", te - ts); 
 		//reverse above steps.
 
 		cudaMemcpy(emptychar, d_empty, n * sizeof(char), cudaMemcpyDeviceToHost);
@@ -189,7 +211,7 @@ int main()
 
 		//copied back to chars, now copy to strings
 		unknown = emptychar;
-		 
+
 		int final_count = h_count[0];
 		if (final_count == 0)
 		{

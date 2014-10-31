@@ -1,11 +1,28 @@
 #include <iostream>
 #include <cstdlib>
-#include <ctime>
 #include <string>
-using namespace std;
+#include <ctime>
+#include <chrono>
+ using namespace std;
+ using namespace chrono;
+
 const int MAX_TRIES=5;
-#define WORD_SIZE 1000000
+#define WORD_SIZE 2000000
 int letterFill (char, string, string&);
+
+
+
+ void reportTime(const char* msg, steady_clock::duration span) { 
+
+    double nsecs = double(span.count()) *
+    steady_clock::period::num / steady_clock::period::den;
+    std::cout << std::fixed;
+    std::cout << msg << " - took - " <<
+    nsecs << " secs" << std::endl;
+
+ }
+ 
+ 
 int main ()
 {
 string name;
@@ -55,7 +72,17 @@ cout << "\n\nGuess a letter: ";
 cin >> letter;
 // Fill secret word with letter if the guess is correct,
 // otherwise increment the number of wrong guesses.
-if (letterFill(letter, word, unknown)==0)
+
+// initialization
+     steady_clock::time_point ts, te;
+
+std::srand(std::time(nullptr));
+ts = steady_clock::now();
+int lets = letterFill(letter, word, unknown);
+te = steady_clock::now();
+reportTime("Search Time: ", te - ts); 
+
+if (lets==0)
 
 
 {
