@@ -116,7 +116,7 @@ int lets = 0;
 //first put stings into char array
 
 memcpy(wordchar, word.c_str(), word.length() + 1 );
-memcpy(emptychar, word.c_str(), word.length() + 1 );
+memcpy(emptychar, unknown.c_str(), unknown.length() + 1 );
 guesschar = &letter;
 
 //Copy char arrays into cuda.
@@ -135,9 +135,8 @@ cudaMemcpy(guesschar, d_guess, sizeof(char), cudaMemcpyDeviceToHost);
 cudaMemcpy(&lets, d_count, sizeof(int), cudaMemcpyDeviceToHost);
 
 //copied back to chars, now copy to strings
-// memcpy(word.c_str(), wordchar, word.length());
-// memcpy(word.c_str(), emptychar, word.length());
-// memcpy(letter, guesschar, sizeof(char));
+unknown = emptychar;
+
 
 if (lets==0)
 {
