@@ -5,60 +5,29 @@
 using namespace std;
 const int MAX_TRIES=5;
 int letterFill (char, string, string&);
-
-//gets matches, and edits strings..
- __global__ void searchLetter(char* empty, char* word, char* guess, int* count) {
-	int i = threadIdx.x;
-	
-	//if guessed letter is the letter at word[i]
-	if(guess[0] == word[i]){
-		//Add to count
-		count++;
-		//Edit empty to have letter filled in.
-		empty[i] = word[i];
-	}
-    __syncthreads();
- }
-
 int main ()
 {
 string name;
 char letter;
 int num_of_wrong_guesses=0;
 string word;
-
+string words[] =
+{
+"india",
+"pakistan",
+"nepal",
+"malaysia",
+"philippines",
+"australia",
+"iran",
+"ethiopia",
+"oman",
+"indonesia"
+};
 //choose and copy a word from array of words randomly
 srand(time(NULL));
 int n=rand()% 10;
-
-//test data to make load slow.
-word = "";
-int l;
-int fail1 = rand()%26;
-int fail2 = rand()%26;
-int fail3 = rand()%26;
-int fail4 = rand()%26;
-int super = rand()%26;
-
-for(l=0;l<50000000;l++){
-
-	int ran = rand()%26;
-
-	if(ran == fail1 || ran == fail2 || ran == fail3 || ran == fail4){
-		
-	}else if(ran == super){
-		char cch = 'a' + ran;
-		word+=cch;
-		word+=cch;
-		word+=cch;		
-	}else{
-		char cch = 'a' + ran;
-		word+=cch;
-	}	
-}
-
-//End Getting Test Data
-
+word=words[n];
 // Initialize the secret word with the * character.
 string unknown(word.length(),'*');
 // welcome the user
@@ -70,80 +39,19 @@ cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 // Loop until the guesses are used up
 while (num_of_wrong_guesses < MAX_TRIES)
 {
-//Uncomment below for better game play.
-//cout << "\n\n" << unknown;
+cout << "\n\n" << unknown;
 cout << "\n\nGuess a letter: ";
 cin >> letter;
 // Fill secret word with letter if the guess is correct,
 // otherwise increment the number of wrong guesses.
-
-//TODO
-
-//int n = word.length();
-
-//MEMaloc d_empty, d_word, d_guess, d_count
-
-//char* d_empty;
-//cudaMalloc((void**)&d_empty, n*sizeof(char));
-
-//char*d_word;
-//cudaMalloc((void**)&d_word, n*sizeof(char));
-
-//char* d_guess;
-//cudaMalloc((void**)&d_count, sizeof(char));
-
-//int* d_count
-//cudaMalloc((void**)&d_count, sizeof(int));
-
-// char* wordchar = new char[word.length() + 1];
-// char* emptychar = new char[word.length() + 1];
-// char* guesschar = new char[letter.length() + 1];
-
-
-
-//this should go to kernal.
-int lets = letterFill(letter, word, unknown);
-//End going to kernal.
-
-//TODO
-
-
-//MEMCPY all above to device
-
-//first put stings into char array
-
-// memcpy(wordchar, word.c_str(), word.length() + 1 );
-// memcpy(emptychar, word.c_str(), word.length() + 1 );
-// memcpy(guesschar, letter.c_str(), letter.length() + 1 );
-
-
-//Copy char arrays into cuda.
-//cudaMemcpy(d_empty, emptychar, n * sizeof(char), cudaMemcpyHostToDevice);
-//cudaMemcpy(d_word, wordchar, n * sizeof(char), cudaMemcpyHostToDevice);
-//cudaMemcpy(d_guess, guesschar, sizeof(char), cudaMemcpyHostToDevice);
-
-//Call searchLetter<<<1, word.length()>>>(d_empty, d_word, d_guess, d_count);
-
-//reverse above steps.
-
-//cudaMemcpy(emptychar, d_empty, n * sizeof(char), cudaMemcpyDeviceToHost);
-//cudaMemcpy(wordchar, d_word, n * sizeof(char), cudaMemcpyDeviceToHost);
-//cudaMemcpy(guesschar, d_guess, sizeof(char), cudaMemcpyDeviceToHost);
-//cudaMemcpy(lets, d_count, sizeof(int), cudaMemcpyDeviceToHost);
-
-//copied back to chars, now copy to strings.
-// memcpy(word.c_str(), wordchar, word.length());
-// memcpy(word.c_str(), emptychar, word.length());
-// memcpy(letter.c_str(), guesschar, letter.length());
-
-if (lets==0)
+if (letterFill(letter, word, unknown)==0)
 {
 cout << endl << "Whoops! That letter isn't in there!" << endl;
 num_of_wrong_guesses++;
 }
 else
 {
-cout << endl << "You found "<< lets <<" letters! Isn't that exciting!" << endl;
+cout << endl << "You found a letter! Isn't that exciting!" << endl;
 }
 // Tell user how many guesses has left.
 cout << "You have " << MAX_TRIES - num_of_wrong_guesses;
@@ -156,20 +64,6 @@ cout << "Yeah! You got it!";
 break;
 }
 }
-
-//TODO
-//delete all char[]'s
-//delete [] emptychar;
-//delete [] wordchar;
-//delete [] guesschar;
-
-//cuda free var's
-//cudaFree(d_empty);
-//cudaFree(d_word);
-//cudaFree(d_guess);
-//cudaFree(d_count);
-
-
 if(num_of_wrong_guesses == MAX_TRIES)
 {
 cout << "\nSorry, you lose...you've been hanged." << endl;
@@ -202,4 +96,19 @@ matches++;
 return matches;
 }
 
+/*
+			Call graph
+
+
+granularity: each sample hit covers 2 byte(s) no time propagated
+
+index % time    self  children    called     name
+                0.00    0.00       1/1           __libc_csu_init [15]
+[8]      0.0    0.00    0.00       1         _GLOBAL__sub_I_main [8]
+-----------------------------------------------
+
+Index by function name
+
+   [8] _GLOBAL__sub_I_main (hangman2.cpp)
+*/
 

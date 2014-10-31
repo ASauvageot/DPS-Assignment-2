@@ -6,6 +6,9 @@
 #include <chrono>
 
 using namespace std;
+ using namespace chrono;
+
+
 const int MAX_TRIES = 5;
 #define WORD_SIZE 1000000
 
@@ -21,14 +24,17 @@ void init_null(char* a, int n) {
 
 int letterFill(char, string, string&);
 
-void reportTime(const char* msg, steady_clock::duration span) { 
+ void reportTime(const char* msg, steady_clock::duration span) { 
+
     double nsecs = double(span.count()) *
     steady_clock::period::num / steady_clock::period::den;
     std::cout << std::fixed;
     std::cout << msg << " - took - " <<
     nsecs << " secs" << std::endl;
- }
 
+ }
+ 
+ 
 //gets matches, and edits strings..
 __global__ void searchLetter(char* empty, char* word, char* guess, int* count, int* fcount, int n) {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -72,7 +78,6 @@ int main()
 	char letter;
 	int num_of_wrong_guesses = 0;
 	string word;
-	steady_clock::time_point ts, te;
 
 	//choose and copy a word from array of words randomly
 	srand(time(NULL));
@@ -133,9 +138,10 @@ int main()
 		// Fill secret word with letter if the guess is correct,
 		// otherwise increment the number of wrong guesses.
 
-		//START TIME 
-		ts = steady_clock::now();
 		//TODO
+		    steady_clock::time_point ts, te;
+
+
 		int n = word.length();
 
 		//MEMaloc d_empty, d_word, d_guess, d_count
@@ -168,10 +174,11 @@ int main()
 		//int lets = 0; not needed
 		//this should go to kernal.
 		//lets = letterFill(letter, word, unknown);
-		//End going to kernal.
+		//End going to kernel.
 
 		//TODO
-
+		std::srand(std::time(nullptr));
+		ts = steady_clock::now();
 
 		//MEMCPY all above to device
 
@@ -188,6 +195,8 @@ int main()
 		cudaMemcpy(d_count, h_count, nblks * ntpb_x * sizeof(int), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_fcount, h_count, nblks * sizeof(int), cudaMemcpyHostToDevice);
 
+
+
 		searchLetter <<<nblks, ntpb_x>>>(d_empty, d_word, d_guess, d_count, d_fcount, ntpb_x);
 		count_final <<<1, nblks>>>(d_fcount, nblks);
 
@@ -200,8 +209,9 @@ int main()
 
 		//copied back to chars, now copy to strings
 		unknown = emptychar;
-		 //--end time
-		te=steady_clock::now();
+
+		te = steady_clock::now();
+		reportTime("Search Time: ", te - ts); 
 		
 		int final_count = h_count[0];
 		if (final_count == 0)
