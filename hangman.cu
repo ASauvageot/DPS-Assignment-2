@@ -3,6 +3,8 @@
 #include <ctime>
 #include <string>
 #include <cuda_runtime.h>
+#include <chrono>
+
 using namespace std;
 const int MAX_TRIES = 5;
 #define WORD_SIZE 20
@@ -208,19 +210,15 @@ int main()
 			cout << "Yeah! You got it!";
 			break;
 		}
+	
+	// TODO
+	// cuda free var's
+	 cudaFree(d_empty);
+	 cudaFree(d_word);
+	 cudaFree(d_guess);
+	 cudaFree(d_count);
 	}
 
-	// TODO
-	// delete all char[]'s
-	// delete [] emptychar;
-	// delete [] wordchar;
-	// delete [] guesschar;
-
-	// cuda free var's
-	// cudaFree(d_empty);
-	// cudaFree(d_word);
-	// cudaFree(d_guess);
-	// cudaFree(d_count);
 
 
 	if (num_of_wrong_guesses == MAX_TRIES)
