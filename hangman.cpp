@@ -77,11 +77,8 @@ cin >> letter;
 // Fill secret word with letter if the guess is correct,
 // otherwise increment the number of wrong guesses.
 
-//this should go to kernal.
-int lets = letterFill(letter, word, unknown);
-//End going to kernal.
-
 //TODO
+
 //int n = word.length();
 
 //MEMaloc d_empty, d_word, d_guess, d_count
@@ -98,17 +95,25 @@ int lets = letterFill(letter, word, unknown);
 //int* d_count
 //cudaMalloc((void**)&d_count, sizeof(int));
 
+// char* wordchar = new char[word.length() + 1];
+// char* emptychar = new char[word.length() + 1];
+// char* guesschar = new char[letter.length() + 1];
+
+
+
+//this should go to kernal.
+int lets = letterFill(letter, word, unknown);
+//End going to kernal.
+
+//TODO
+
+
 //MEMCPY all above to device
 
 //first put stings into char array
 
-// char* wordchar = new char[word.length() + 1];
 // memcpy(wordchar, word.c_str(), word.length() + 1 );
-
-// char* emptychar = new char[word.length() + 1];
 // memcpy(emptychar, word.c_str(), word.length() + 1 );
-
-// char* guesschar = new char[letter.length() + 1];
 // memcpy(guesschar, letter.c_str(), letter.length() + 1 );
 
 
@@ -121,8 +126,15 @@ int lets = letterFill(letter, word, unknown);
 
 //reverse above steps.
 
-//MEMCPY all back to host
+//cudaMemcpy(emptychar, d_empty, n * sizeof(char), cudaMemcpyDeviceToHost);
+//cudaMemcpy(wordchar, d_word, n * sizeof(char), cudaMemcpyDeviceToHost);
+//cudaMemcpy(guesschar, d_guess, sizeof(char), cudaMemcpyDeviceToHost);
+//cudaMemcpy(lets, d_count, sizeof(int), cudaMemcpyDeviceToHost);
 
+//copied back to chars, now copy to strings.
+// memcpy(word.c_str(), wordchar, word.length());
+// memcpy(word.c_str(), emptychar, word.length());
+// memcpy(letter.c_str(), guesschar, letter.length());
 
 if (lets==0)
 {
@@ -144,6 +156,20 @@ cout << "Yeah! You got it!";
 break;
 }
 }
+
+//TODO
+//delete all char[]'s
+//delete [] emptychar;
+//delete [] wordchar;
+//delete [] guesschar;
+
+//cuda free var's
+//cudaFree(d_empty);
+//cudaFree(d_word);
+//cudaFree(d_guess);
+//cudaFree(d_count);
+
+
 if(num_of_wrong_guesses == MAX_TRIES)
 {
 cout << "\nSorry, you lose...you've been hanged." << endl;
