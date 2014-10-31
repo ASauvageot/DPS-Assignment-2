@@ -72,7 +72,7 @@ cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 while (num_of_wrong_guesses < MAX_TRIES)
 {
 //Uncomment below for better game play.
-//cout << "\n\n" << unknown;
+cout << "\n\n" << unknown;
 cout << "\n\nGuess a letter: ";
 cin >> letter;
 // Fill secret word with letter if the guess is correct,
@@ -98,11 +98,14 @@ cudaMalloc((void**)&d_count, sizeof(int));
 char* wordchar = new char[word.length() + 1];
 char* emptychar = new char[word.length() + 1];
 char* guesschar = new char[sizeof(char)];
+int cou[1];
+cou[0] = 0;
+int * h_count = cou;
 
 
-
+int lets = 0;
 //this should go to kernal.
-int lets = letterFill(letter, word, unknown);
+//lets = letterFill(letter, word, unknown);
 //End going to kernal.
 
 //TODO
@@ -120,8 +123,9 @@ guesschar = &letter;
 cudaMemcpy(d_empty, emptychar, n * sizeof(char), cudaMemcpyHostToDevice);
 cudaMemcpy(d_word, wordchar, n * sizeof(char), cudaMemcpyHostToDevice);
 cudaMemcpy(d_guess, guesschar, sizeof(char), cudaMemcpyHostToDevice);
+cudaMemcpy(d_count, h_count, sizeof(int), cudaMemcpyHostToDevice);
 
-//Call searchLetter<<<1, word.length()>>>(d_empty, d_word, d_guess, d_count);
+searchLetter<<<1, word.length()>>>(d_empty, d_word, d_guess, d_count);
 
 //reverse above steps.
 
@@ -131,9 +135,9 @@ cudaMemcpy(guesschar, d_guess, sizeof(char), cudaMemcpyDeviceToHost);
 cudaMemcpy(&lets, d_count, sizeof(int), cudaMemcpyDeviceToHost);
 
 //copied back to chars, now copy to strings
-memcpy(word.c_str(), wordchar, word.length());
-memcpy(word.c_str(), emptychar, word.length());
-memcpy(letter, guesschar, sizeof(char));
+// memcpy(word.c_str(), wordchar, word.length());
+// memcpy(word.c_str(), emptychar, word.length());
+// memcpy(letter, guesschar, sizeof(char));
 
 if (lets==0)
 {
@@ -156,17 +160,17 @@ break;
 }
 }
 
-//TODO
-//delete all char[]'s
-delete [] emptychar;
-delete [] wordchar;
-delete [] guesschar;
+// TODO
+// delete all char[]'s
+// delete [] emptychar;
+// delete [] wordchar;
+// delete [] guesschar;
 
-//cuda free var's
-cudaFree(d_empty);
-cudaFree(d_word);
-cudaFree(d_guess);
-cudaFree(d_count);
+// cuda free var's
+// cudaFree(d_empty);
+// cudaFree(d_word);
+// cudaFree(d_guess);
+// cudaFree(d_count);
 
 
 if(num_of_wrong_guesses == MAX_TRIES)
