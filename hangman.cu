@@ -111,7 +111,7 @@ int main()
 		int * h_count = new int[word.length()];
 
 
-		int lets = 0;
+		//int lets = 0; no longer needed 
 		//this should go to kernal.
 		//lets = letterFill(letter, word, unknown);
 		//End going to kernal.
