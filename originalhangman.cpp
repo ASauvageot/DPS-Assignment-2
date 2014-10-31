@@ -4,6 +4,7 @@
 #include <string>
 using namespace std;
 const int MAX_TRIES=5;
+#define WORD_SIZE 1000000
 int letterFill (char, string, string&);
 int main ()
 {
@@ -11,23 +12,33 @@ string name;
 char letter;
 int num_of_wrong_guesses=0;
 string word;
-string words[] =
-{
-"india",
-"pakistan",
-"nepal",
-"malaysia",
-"philippines",
-"australia",
-"iran",
-"ethiopia",
-"oman",
-"indonesia"
-};
-//choose and copy a word from array of words randomly
-srand(time(NULL));
-int n=rand()% 10;
-word=words[n];
+//test data to make load slow.
+	word = "";
+	int l;
+	int fail1 = rand() % 26;
+	int fail2 = rand() % 26;
+	int fail3 = rand() % 26;
+	int fail4 = rand() % 26;
+	int super = rand() % 26;
+
+	for (l = 0; l<WORD_SIZE; l++){
+
+		int ran = rand() % 26;
+
+		if (ran == fail1 || ran == fail2 || ran == fail3 || ran == fail4){
+
+		}
+		else if (ran == super){
+			char cch = 'a' + ran;
+			word += cch;
+			word += cch;
+			word += cch;
+		}
+		else{
+			char cch = 'a' + ran;
+			word += cch;
+		}
+	}
 // Initialize the secret word with the * character.
 string unknown(word.length(),'*');
 // welcome the user
@@ -39,7 +50,7 @@ cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 // Loop until the guesses are used up
 while (num_of_wrong_guesses < MAX_TRIES)
 {
-cout << "\n\n" << unknown;
+//cout << "\n\n" << unknown;
 cout << "\n\nGuess a letter: ";
 cin >> letter;
 // Fill secret word with letter if the guess is correct,

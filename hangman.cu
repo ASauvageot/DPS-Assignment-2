@@ -7,7 +7,7 @@
 
 using namespace std;
 const int MAX_TRIES = 5;
-#define WORD_SIZE 20
+#define WORD_SIZE 1000000
 
 void init_zero(int* a, int n) {
  for (int i = 0; i < n; i++)
@@ -118,7 +118,7 @@ int main()
 	while (num_of_wrong_guesses < MAX_TRIES)
 	{
 		//Uncomment below for better game play.
-		cout << "\n\n" << unknown;
+		//cout << "\n\n" << unknown;
 		cout << "\n\nGuess a letter: ";
 		cin >> letter;
 		// Fill secret word with letter if the guess is correct,
