@@ -107,11 +107,19 @@ int lets = letterFill(letter, word, unknown);
 
 // char* emptychar = new char[word.length() + 1];
 // memcpy(emptychar, word.c_str(), word.length() + 1 );
-//...
 
+// char* guesschar = new char[letter.length() + 1];
+// memcpy(guesschar, letter.c_str(), letter.length() + 1 );
+
+
+//Copy char arrays into cuda.
+//cudaMemcpy(d_empty, emptychar, n * sizeof(char), cudaMemcpyHostToDevice);
+//cudaMemcpy(d_word, wordchar, n * sizeof(char), cudaMemcpyHostToDevice);
+//cudaMemcpy(d_guess, guesschar, sizeof(char), cudaMemcpyHostToDevice);
 
 //Call searchLetter<<<1, word.length()>>>(d_empty, d_word, d_guess, d_count);
 
+//reverse above steps.
 
 //MEMCPY all back to host
 
