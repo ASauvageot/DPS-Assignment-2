@@ -5,10 +5,17 @@
 #include <cuda_runtime.h>
 using namespace std;
 const int MAX_TRIES = 5;
+#define WORD_SIZE 10
+
+void init_zero(int* a, int n) {
+ for (int i = 0; i < n; i++)
+	a[i] = 0;
+}
+
 int letterFill(char, string, string&);
 
 //gets matches, and edits strings..
-__global__ void searchLetter(char* empty, char* word, char* guess, int* count, int n) {
+__global__ void searchLetter(char* empty, char* word, char* guess, int* count, int* fcount, int n) {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 
 	//if guessed letter is the letter at word[i]
@@ -22,11 +29,25 @@ __global__ void searchLetter(char* empty, char* word, char* guess, int* count, i
 		count[i] = 0;
 	}
 	__syncthreads();
-	for (int stride = 1; i + stride < n; stride *= 2) {
+	for (int stride = 1; stride < n; stride *= 2) {
 		if (i % (2 * stride) == 0)
 			count[i] += count[i + stride];
 		__syncthreads();
 	}
+	if (threadIdx.x == 0)
+         fcount[blockIdx.x] = count[i];
+}
+
+__global__ void count_final(int* fcount, int n) {
+
+	int i = threadIdx.x;
+
+	for (int stride = 1; i + stride < n; stride *= 2) {
+         if (i % (2 * stride) == 0)
+             fcount[i] += fcount[i + stride];
+         __syncthreads();
+    }
+	
 }
 
 int main()
@@ -49,7 +70,7 @@ int main()
 	int fail4 = rand() % 26;
 	int super = rand() % 26;
 
-	for (l = 0; l<1020; l++){
+	for (l = 0; l<WORD_SIZE; l++){
 
 		int ran = rand() % 26;
 
@@ -68,8 +89,15 @@ int main()
 		}
 	}
 
-	//End Getting Test Data
+	int d;
+	cudaDeviceProp prop;
+	cudaGetDevice(&d);
+	cudaGetDeviceProperties(&prop, d);
+	int ntpb_x = prop.maxThreadsDim[0];
 
+	int nblks =  (WORD_SIZE + ntpb_x - 1) / ntpb_x; // number of blocks
+
+		
 	// Initialize the secret word with the * character.
 	string unknown(word.length(), '*');
 	// welcome the user
@@ -103,12 +131,17 @@ int main()
 		cudaMalloc((void**)&d_guess, sizeof(char));
 
 		int* d_count;
-		cudaMalloc((void**)&d_count, sizeof(int));
+		cudaMalloc((void**)&d_count, n*sizeof(int));
 
+		int* d_fcount;
+		cudaMalloc((void**)&d_fcount, nblks*sizeof(int));
+		
 		char* wordchar = new char[word.length() + 1];
 		char* emptychar = new char[word.length() + 1];
 		char* guesschar = new char[sizeof(char)];
-		int * h_count = new int[word.length()];
+		int * h_count = new int[nblks * ntpb_x];
+		init_zero(h_count, nblks * ntpb_x);
+		int * h_fcount = new int[nblks];
 
 
 		//int lets = 0; not needed
@@ -132,28 +165,34 @@ int main()
 		cudaMemcpy(d_word, wordchar, n * sizeof(char), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_guess, guesschar, sizeof(char), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_count, h_count, n * sizeof(int), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_fcount, h_count, nblks * sizeof(int), cudaMemcpyHostToDevice);
 
-		searchLetter << <10, word.length() / 10 >> >(d_empty, d_word, d_guess, d_count, n);
+		searchLetter <<<nblks, ntpb_x>>>(d_empty, d_word, d_guess, d_count, d_fcount, ntpb_x);
+		count_final <<<1, nblks>>>(d_fcount, nblks);
 
 		//reverse above steps.
 
 		cudaMemcpy(emptychar, d_empty, n * sizeof(char), cudaMemcpyDeviceToHost);
 		cudaMemcpy(wordchar, d_word, n * sizeof(char), cudaMemcpyDeviceToHost);
 		cudaMemcpy(guesschar, d_guess, sizeof(char), cudaMemcpyDeviceToHost);
-		cudaMemcpy(h_count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+		cudaMemcpy(h_count, d_fcount, nblks*sizeof(int), cudaMemcpyDeviceToHost);
 
 		//copied back to chars, now copy to strings
 		unknown = emptychar;
 
-
-		if (h_count[0] == 0)
+		 for(int k=0; k<nblks;k++){
+			 cout<< h_count[k] <<endl;
+		 }
+		 
+		int final_count = h_count[0];
+		if (final_count == 0)
 		{
 			cout << endl << "Whoops! That letter isn't in there!" << endl;
 			num_of_wrong_guesses++;
 		}
 		else
 		{
-			cout << endl << "You found " << h_count[0] << " letters! Isn't that exciting!" << endl;
+			cout << endl << "You found " << final_count << " letters! Isn't that exciting!" << endl;
 		}
 		// Tell user how many guesses has left.
 		cout << "You have " << MAX_TRIES - num_of_wrong_guesses;
