@@ -9,7 +9,7 @@ int letterFill(char, string, string&);
 
 //gets matches, and edits strings..
 __global__ void searchLetter(char* empty, char* word, char* guess, int* count, int n) {
-	int i = threadIdx.x;
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
 
 	//if guessed letter is the letter at word[i]
 	if (guess[0] == word[i]){
@@ -111,7 +111,7 @@ int main()
 		int * h_count = new int[word.length()];
 
 
-		//int lets = 0; no longer needed 
+		//int lets = 0; not needed
 		//this should go to kernal.
 		//lets = letterFill(letter, word, unknown);
 		//End going to kernal.
@@ -133,7 +133,7 @@ int main()
 		cudaMemcpy(d_guess, guesschar, sizeof(char), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_count, h_count, n * sizeof(int), cudaMemcpyHostToDevice);
 
-		searchLetter << <1, word.length() >> >(d_empty, d_word, d_guess, d_count, n);
+		searchLetter << <10, word.length() / 10 >> >(d_empty, d_word, d_guess, d_count, n);
 
 		//reverse above steps.
 
