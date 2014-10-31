@@ -187,10 +187,6 @@ int main()
 
 		//copied back to chars, now copy to strings
 		unknown = emptychar;
-
-		 for(int k=0; k<nblks;k++){
-			 cout<< h_count[k] <<endl;
-		 }
 		 
 		int final_count = h_count[0];
 		if (final_count == 0)
