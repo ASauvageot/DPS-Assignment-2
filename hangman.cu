@@ -5,11 +5,16 @@
 #include <cuda_runtime.h>
 using namespace std;
 const int MAX_TRIES = 5;
-#define WORD_SIZE 10
+#define WORD_SIZE 20
 
 void init_zero(int* a, int n) {
  for (int i = 0; i < n; i++)
 	a[i] = 0;
+}
+
+void init_null(char* a, int n) {
+ for (int i = 0; i < n; i++)
+	a[i] = '\0';
 }
 
 int letterFill(char, string, string&);
@@ -29,6 +34,7 @@ __global__ void searchLetter(char* empty, char* word, char* guess, int* count, i
 		count[i] = 0;
 	}
 	__syncthreads();
+	
 	for (int stride = 1; stride < n; stride *= 2) {
 		if (i % (2 * stride) == 0)
 			count[i] += count[i + stride];
@@ -101,7 +107,7 @@ int main()
 	// Initialize the secret word with the * character.
 	string unknown(word.length(), '*');
 	// welcome the user
-	cout << "\n\nWelcome to hangman...Guess a country Name";
+	cout << "\n\nWelcome to Letter Search...Guess a Letter!";
 	cout << "\n\nEach letter is represented by a star.";
 	cout << "\n\nYou have to type only one letter in one try";
 	cout << "\n\nYou have " << MAX_TRIES << " tries to try and guess the word.";
@@ -122,22 +128,24 @@ int main()
 		//MEMaloc d_empty, d_word, d_guess, d_count
 
 		char* d_empty;
-		cudaMalloc((void**)&d_empty, n*sizeof(char));
+		cudaMalloc((void**)&d_empty, nblks * ntpb_x*sizeof(char));
 
 		char*d_word;
-		cudaMalloc((void**)&d_word, n*sizeof(char));
+		cudaMalloc((void**)&d_word, nblks * ntpb_x*sizeof(char));
 
 		char* d_guess;
 		cudaMalloc((void**)&d_guess, sizeof(char));
 
 		int* d_count;
-		cudaMalloc((void**)&d_count, n*sizeof(int));
+		cudaMalloc((void**)&d_count, nblks * ntpb_x*sizeof(int));
 
 		int* d_fcount;
 		cudaMalloc((void**)&d_fcount, nblks*sizeof(int));
 		
-		char* wordchar = new char[word.length() + 1];
-		char* emptychar = new char[word.length() + 1];
+		char* wordchar = new char[nblks * ntpb_x];
+		init_null( wordchar, nblks * ntpb_x);
+		char* emptychar = new char[nblks * ntpb_x];
+		init_null( emptychar, nblks * ntpb_x);
 		char* guesschar = new char[sizeof(char)];
 		int * h_count = new int[nblks * ntpb_x];
 		init_zero(h_count, nblks * ntpb_x);
@@ -161,10 +169,10 @@ int main()
 		guesschar = &letter;
 
 		//Copy char arrays into cuda.
-		cudaMemcpy(d_empty, emptychar, n * sizeof(char), cudaMemcpyHostToDevice);
-		cudaMemcpy(d_word, wordchar, n * sizeof(char), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_empty, emptychar, nblks * ntpb_x * sizeof(char), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_word, wordchar, nblks * ntpb_x * sizeof(char), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_guess, guesschar, sizeof(char), cudaMemcpyHostToDevice);
-		cudaMemcpy(d_count, h_count, n * sizeof(int), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_count, h_count, nblks * ntpb_x * sizeof(int), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_fcount, h_count, nblks * sizeof(int), cudaMemcpyHostToDevice);
 
 		searchLetter <<<nblks, ntpb_x>>>(d_empty, d_word, d_guess, d_count, d_fcount, ntpb_x);
