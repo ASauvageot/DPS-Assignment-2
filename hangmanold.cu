@@ -6,7 +6,7 @@
 #include <chrono>
 
 using namespace std;
-using namespace chrono;
+ using namespace chrono;
 
 
 const int MAX_TRIES = 5;
@@ -129,44 +129,10 @@ int main()
 	cout << "\n\nYou have " << MAX_TRIES << " tries to try and guess the word.";
 	cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 	// Loop until the guesses are used up
-	
-	//Create the arrays/
-	char* wordchar = new char[nblks * ntpb_x];
-	char* emptychar = new char[nblks * ntpb_x];
-	char* guesschar = new char[sizeof(char)];
-	int * h_count = new int[nblks * ntpb_x];
-	int * h_fcount = new int[nblks];
-	
-	//Initiate all arrays to null or 0 to stop junk
-		init_null( wordchar, nblks * ntpb_x);
-		init_null( emptychar, nblks * ntpb_x);
-	
-	//MEMaloc d_empty, d_word, d_guess, d_count
-		char*d_word;
-		cudaMalloc((void**)&d_word, nblks * ntpb_x*sizeof(char));
-		
-		char* d_empty;
-		cudaMalloc((void**)&d_empty, nblks * ntpb_x*sizeof(char));
-		char* d_guess;
-		cudaMalloc((void**)&d_guess, sizeof(char));
-		int* d_count;
-		cudaMalloc((void**)&d_count, nblks * ntpb_x*sizeof(int));
-		int* d_fcount;
-		cudaMalloc((void**)&d_fcount, nblks*sizeof(int));
-
-	//first put stings into char array
-		memcpy(wordchar, word.c_str(), word.length() + 1);
-		memcpy(emptychar, unknown.c_str(), unknown.length() + 1);
-		guesschar = &letter;
-		
-	//Copy char arrays into cuda.
-		cudaMemcpy(d_word, wordchar, nblks * ntpb_x * sizeof(char), cudaMemcpyHostToDevice);
-
-
-
-		
 	while (num_of_wrong_guesses < MAX_TRIES)
 	{
+		
+		
 		//Uncomment below for better game play.
 		//cout << "\n\n" << unknown;
 		cout << "\n\nGuess a letter: ";
@@ -176,35 +142,72 @@ int main()
 
 		//TODO
 		    steady_clock::time_point ts, te;
-std::srand(std::time(nullptr));
+		std::srand(std::time(nullptr));
 		ts = steady_clock::now();
+
 
 		int n = word.length();
 
+		//MEMaloc d_empty, d_word, d_guess, d_count
+
+		char* d_empty;
+		cudaMalloc((void**)&d_empty, nblks * ntpb_x*sizeof(char));
+
+		char*d_word;
+		cudaMalloc((void**)&d_word, nblks * ntpb_x*sizeof(char));
+
+		char* d_guess;
+		cudaMalloc((void**)&d_guess, sizeof(char));
+
+		int* d_count;
+		cudaMalloc((void**)&d_count, nblks * ntpb_x*sizeof(int));
+
+		int* d_fcount;
+		cudaMalloc((void**)&d_fcount, nblks*sizeof(int));
 		
-		
+		char* wordchar = new char[nblks * ntpb_x];
+		init_null( wordchar, nblks * ntpb_x);
+		char* emptychar = new char[nblks * ntpb_x];
+		init_null( emptychar, nblks * ntpb_x);
+		char* guesschar = new char[sizeof(char)];
+		int * h_count = new int[nblks * ntpb_x];
+		init_zero(h_count, nblks * ntpb_x);
+		int * h_fcount = new int[nblks];
+
+
 		//int lets = 0; not needed
 		//this should go to kernal.
 		//lets = letterFill(letter, word, unknown);
 		//End going to kernel.
 
+		//TODO
 		
-		
-		init_zero(h_count, nblks * ntpb_x);
-		
-	//Copy char arrays into cuda.
+
+		//MEMCPY all above to device
+
+		//first put stings into char array
+
+		memcpy(wordchar, word.c_str(), word.length() + 1);
+		memcpy(emptychar, unknown.c_str(), unknown.length() + 1);
+		guesschar = &letter;
+
+		//Copy char arrays into cuda.
 		cudaMemcpy(d_empty, emptychar, nblks * ntpb_x * sizeof(char), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_word, wordchar, nblks * ntpb_x * sizeof(char), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_guess, guesschar, sizeof(char), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_count, h_count, nblks * ntpb_x * sizeof(int), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_fcount, h_count, nblks * sizeof(int), cudaMemcpyHostToDevice);
+
+
 
 		searchLetter <<<nblks, ntpb_x>>>(d_empty, d_word, d_guess, d_count, d_fcount, ntpb_x);
 		count_final <<<1, nblks>>>(d_fcount, nblks);
 
 		//reverse above steps.
 
-
 		cudaMemcpy(emptychar, d_empty, n * sizeof(char), cudaMemcpyDeviceToHost);
+		cudaMemcpy(wordchar, d_word, n * sizeof(char), cudaMemcpyDeviceToHost);
+		cudaMemcpy(guesschar, d_guess, sizeof(char), cudaMemcpyDeviceToHost);
 		cudaMemcpy(h_count, d_fcount, nblks*sizeof(int), cudaMemcpyDeviceToHost);
 
 		//copied back to chars, now copy to strings
@@ -234,14 +237,14 @@ std::srand(std::time(nullptr));
 			break;
 		}
 	
-	
-	}
 	// TODO
 	// cuda free var's
 	 cudaFree(d_empty);
 	 cudaFree(d_word);
 	 cudaFree(d_guess);
 	 cudaFree(d_count);
+	}
+
 
 
 	if (num_of_wrong_guesses == MAX_TRIES)
@@ -253,7 +256,6 @@ std::srand(std::time(nullptr));
 	cin.get();
 	return 0;
 }
-
 /* Take a one character guess and the secret word, and fill in the
 unfinished guessword. Returns number of characters matched.
 Also, returns zero if the character is already guessed. */
